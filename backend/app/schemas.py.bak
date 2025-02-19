@@ -21,7 +21,6 @@ class Member(MemberBase):
 class MemberBasic(BaseModel):
     id: int
     name: str
-    phone: str
     membership_status: bool
 
     class Config:
@@ -36,7 +35,6 @@ class AttendanceCreate(AttendanceBase):
 class Attendance(AttendanceBase):
     id: int
     check_in_time: datetime
-    check_out_time: Optional[datetime] = None
 
     class Config:
         orm_mode = True
@@ -45,7 +43,6 @@ class PaymentBase(BaseModel):
     member_id: int
     amount: float
     next_due_date: datetime
-    payment_reference: str
 
 class PaymentCreate(PaymentBase):
     pass
