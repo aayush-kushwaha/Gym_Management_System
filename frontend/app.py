@@ -215,9 +215,9 @@ if not st.session_state.admin_token:
                 # Extract numeric ID from TDFC format
                 numeric_id = int(member_id[4:])
                 success = mark_attendance_by_id(numeric_id)
-            # Only rerun if attendance was not marked successfully
-            if not success:
-                st.experimental_rerun()
+            # Only rerun if user takes another action, not immediately after success
+            if success:
+                st.session_state.form_submitted = True
 
 # Admin Dashboard
 if st.session_state.admin_token:
@@ -284,10 +284,84 @@ if st.session_state.admin_token:
     # Attendance Page
     elif st.session_state.current_page == "✅ Attendance":
         st.header("✅ Attendance Management")
-        with st.form("admin_attendance_form"):
-            name = st.text_input("👤 Member Name")
-            phone = st.text_input("📱 Phone Number")
+        
+        # Initialize tab state if not exists
+        if 'attendance_tab' not in st.session_state:
+            st.session_state.attendance_tab = "mark"
+        
+        # Add tabs for different views with state management
+        tab1, tab2 = st.tabs(["📝 Mark Attendance", "📊 Attendance History"])
+        
+        # Update tab state based on which tab is active
+        if tab1.id not in st.session_state:
+            st.session_state[tab1.id] = True
+        if tab2.id not in st.session_state:
+            st.session_state[tab2.id] = False
             
-            # Validate inputs
-            submit_disabled = not (name and len(name) >= 3 and phone and len(phone) == 10 and phone.isdigit())
-            submitted = st.form_submit_button("✅ Mark Attendance", disabled=submit_disabled)
+        with tab1:
+            st.session_state.attendance_tab = "mark"
+            # Reuse the same attendance form logic with admin privileges
+            verification_method = st.radio(
+                "Select Verification Method",
+                ["Name & Phone", "Member ID"],
+                horizontal=True,
+                key="verification_method_admin"
+            )
+
+            with st.form("admin_attendance_form"):
+                if verification_method == "Name & Phone":
+                    name = st.text_input("👤 Full Name", key="admin_attendance_name")
+                    phone = st.text_input("📱 Phone Number", key="admin_attendance_phone")
+                    submit_disabled = not (name and len(name) >= 3 and phone and len(phone) == 10 and phone.isdigit())
+                else:
+                    member_id = st.text_input("🆔 Member ID (e.g., TDFC01)", key="admin_attendance_member_id")
+                    submit_disabled = not (member_id and member_id.startswith("TDFC") and len(member_id) >= 6 and member_id[4:].isdigit())
+
+                submitted = st.form_submit_button("✅ Mark Attendance", disabled=submit_disabled)
+
+                if submitted:
+                    if verification_method == "Name & Phone":
+                        success = mark_attendance(name, phone)
+                    else:
+                        numeric_id = int(member_id[4:])
+                        success = mark_attendance_by_id(numeric_id)
+                    if success:
+                        st.session_state.form_submitted = True
+                        st.experimental_rerun()
+        
+        with tab2:
+            try:
+                # Fetch today's attendance
+                print("Fetching today's attendance...")
+                response = requests.get(f"{API_URL}/attendance/today", headers=headers)
+                print(f"Response status code: {response.status_code}")
+                if response.status_code == 200:
+                    attendances = response.json()
+                    print(f"Received attendance data: {attendances}")
+                    if attendances:
+                        # Convert to DataFrame for better display
+                        df = pd.DataFrame(attendances)
+                        print(f"DataFrame columns: {df.columns}")
+                        # Ensure we have all required columns in the correct order
+                        df = df[['id', 'member_id', 'check_in_time', 'check_out_time']]
+                        # Format member_id with TDFC prefix
+                        df['member_id'] = df['member_id'].apply(lambda x: f'TDFC{str(x).zfill(2)}')
+                        # Format timestamps
+                        df['check_in_time'] = pd.to_datetime(df['check_in_time']).dt.strftime('%I:%M %p')
+                        df['check_out_time'] = df['check_out_time'].apply(lambda x: pd.to_datetime(x).strftime('%I:%M %p') if pd.notna(x) else '-')
+                        # Rename columns for display
+                        df.columns = ['ID', 'Member ID', 'Check-in Time', 'Check-out Time']
+                        st.dataframe(df, use_container_width=True, hide_index=True)
+                    else:
+                        st.info("No attendance records for today.")
+                elif response.status_code == 401:
+                    st.error("Authentication failed. Please log out and log in again.")
+                    # Clear token to force re-login
+                    st.session_state.admin_token = None
+                    st.experimental_rerun()
+                else:
+                    st.error(f"Failed to fetch attendance records. Status code: {response.status_code}")
+            except requests.exceptions.RequestException as e:
+                st.error(f"Network error: {str(e)}")
+            except Exception as e:
+                st.error(f"Error fetching attendance: {str(e)}")

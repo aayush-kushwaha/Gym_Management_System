@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from . import models, schemas, database, auth
+from app import models, schemas, database, auth, utils
 from .database import engine
 from datetime import datetime, timedelta
 from fastapi.middleware.cors import CORSMiddleware
@@ -78,20 +78,13 @@ def mark_member_attendance(member_id: int, phone: str, db: Session = Depends(get
     if not member.membership_status:
         raise HTTPException(status_code=403, detail="Membership is inactive")
 
-    # Check if attendance already marked today
-    today = datetime.now().date()
-    existing_attendance = db.query(models.Attendance).filter(
-        models.Attendance.member_id == member_id,
-        func.date(models.Attendance.check_in_time) == today,
-        models.Attendance.check_out_time == None
-    ).first()
-    
-    if existing_attendance:
-        # If found an open attendance, mark check-out time
-        existing_attendance.check_out_time = datetime.now()
-        db.commit()
-        db.refresh(existing_attendance)
-        return existing_attendance
+    # Check if attendance already marked today using Nepal time
+    has_attendance, check_in_time = utils.check_attendance_status(db, member_id)
+    if has_attendance:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Attendance already marked at {check_in_time}"
+        )
 
     # Mark new attendance
     db_attendance = models.Attendance(member_id=member_id)
@@ -131,18 +124,23 @@ def mark_attendance(member_id: int, db: Session = Depends(get_db), current_admin
 
 @app.get("/attendance/{member_id}", response_model=List[schemas.Attendance])
 def get_member_attendance(member_id: int, db: Session = Depends(get_db), current_admin: models.Admin = Depends(get_current_admin)):
-    return db.query(models.Attendance).filter(models.Attendance.member_id == member_id).all()
+    return db.query(models.Attendance).filter(models.Attendance.member_id == member_id).order_by(models.Attendance.check_in_time.desc()).all()
 
 @app.get("/attendance/today", response_model=List[schemas.Attendance])
-def get_today_attendance(db: Session = Depends(get_db)):
+def get_today_attendance(db: Session = Depends(get_db), current_admin: models.Admin = Depends(get_current_admin)):
+    print("Processing today's attendance request...")
     today = datetime.now().date()
-    return db.query(models.Attendance).filter(
+    attendances = db.query(models.Attendance).options(db.joinedload(models.Attendance.member)).filter(
         func.date(models.Attendance.check_in_time) == today
-    ).all()
+    ).order_by(models.Attendance.check_in_time.desc()).all()
+    print(f"Found {len(attendances)} attendance records for today")
+    for attendance in attendances:
+        print(f"Attendance record: ID={attendance.id}, Member ID={attendance.member_id}, Check-in={attendance.check_in_time}")
+    return attendances
 
 @app.get("/attendance/recent", response_model=List[schemas.Attendance])
 def get_recent_attendance(db: Session = Depends(get_db)):
-    return db.query(models.Attendance).order_by(models.Attendance.check_in_time.desc()).limit(5).all()
+    return db.query(models.Attendance).options(db.joinedload(models.Attendance.member)).order_by(models.Attendance.check_in_time.desc()).limit(5).all()
 
 @app.post("/payments/", response_model=schemas.Payment)
 def create_payment(payment: schemas.PaymentCreate, db: Session = Depends(get_db), current_admin: models.Admin = Depends(get_current_admin)):

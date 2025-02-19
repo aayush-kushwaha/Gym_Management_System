@@ -37,8 +37,10 @@ class Attendance(AttendanceBase):
     id: int
     check_in_time: datetime
     check_out_time: Optional[datetime] = None
+    member: Optional[MemberBasic] = None
 
     class Config:
+        from_attributes = True
         orm_mode = True
 
 class PaymentBase(BaseModel):
