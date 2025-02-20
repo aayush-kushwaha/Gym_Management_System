@@ -187,6 +187,10 @@ if st.session_state.admin_token:
 
 # If not logged in, show Attendance Form
 if not st.session_state.admin_token:
+    col1, col2, col3 = st.columns([2, 1, 2])
+    with col2:
+        st.image("assets/dragon_fitness_logo.jpg", width=500)
+    
     current_time = datetime.now()
     st.markdown(f"<h3 style='text-align: center;'>{current_time.strftime('%A, %B %d, %Y')}</h3>", unsafe_allow_html=True)
     st.markdown(f"<h2 style='text-align: center;'>{current_time.strftime('%I:%M %p')}</h2>", unsafe_allow_html=True)
