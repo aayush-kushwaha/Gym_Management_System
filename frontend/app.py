@@ -31,7 +31,7 @@ def login(username, password):
             data = response.json()
             st.session_state.admin_token = data["access_token"]
             st.session_state.admin_username = username
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.error("Invalid credentials")
     except Exception as e:
@@ -41,7 +41,7 @@ def login(username, password):
 def logout():
     st.session_state.admin_token = None
     st.session_state.admin_username = None
-    st.experimental_rerun()
+    st.rerun()
 
 # Add greetings list at the top of the file after imports
 greetings = [
@@ -57,15 +57,20 @@ greetings = [
 # Function to mark attendance by ID
 def mark_attendance_by_id(member_id):
     try:
-        # First get member details to get phone number
+        # Use the member_id directly since it's already in the correct format
         response = requests.get(f"{API_URL}/members/verify_by_id/{member_id}")
         if response.status_code == 404:
             st.error("❌ Invalid Member ID")
             return False
         
         member = response.json()
-        # Then mark attendance with both member_id and phone
-        response = requests.post(f"{API_URL}/attendance/mark", params={"member_id": member_id, "phone": member["phone"]})
+        # Send data as query parameters
+        params = {
+            "member_code": member["member_code"],  # Use member_code instead of numeric ID
+            "phone": member["phone"]
+        }
+        response = requests.post(f"{API_URL}/attendance/mark", params=params)
+        
         if response.status_code == 200:
             greeting = random.choice(greetings).format(name=member["name"])
             st.success(greeting)
@@ -97,8 +102,8 @@ def mark_attendance(name, phone):
             return False
         
         member = response.json()
-        # Then mark attendance
-        response = requests.post(f"{API_URL}/attendance/mark", params={"member_id": member["id"], "phone": phone})
+        # Use member_code instead of id
+        response = requests.post(f"{API_URL}/attendance/mark", params={"member_id": member["member_code"], "phone": phone})
         if response.status_code == 200:
             greeting = random.choice(greetings).format(name=member["name"])
             st.success(greeting)
@@ -126,12 +131,12 @@ if st.session_state.admin_token is None:
     with col1:
         if st.button("🔑 Admin Login"):
             st.session_state.show_admin_login = not st.session_state.show_admin_login
-            st.experimental_rerun()
+            st.rerun()
     with col2:
         if st.button("📝 Register"):
             st.session_state.show_admin_register = True
             st.session_state.show_admin_login = False
-            st.experimental_rerun()
+            st.rerun()
 
     # Show Admin Login Form
     if st.session_state.show_admin_login:
@@ -166,7 +171,7 @@ if st.session_state.admin_token is None:
                             st.success("✅ Admin registered successfully! You can now login.")
                             st.session_state.show_admin_register = False
                             st.session_state.show_admin_login = True
-                            st.experimental_rerun()
+                            st.rerun()
                         elif response.status_code == 400:
                             st.error("❌ Username already exists!")
                         else:
@@ -199,23 +204,27 @@ if not st.session_state.admin_token:
         if verification_method == "Name & Phone":
             name = st.text_input("👤 Full Name", key="attendance_name")
             phone = st.text_input("📱 Phone Number", key="attendance_phone")
-            # Validate inputs for name & phone method
             submit_disabled = not (name and len(name) >= 3 and phone and len(phone) == 10 and phone.isdigit())
         else:
-            member_id = st.text_input("🆔 Member ID (e.g., TDFC01)", key="attendance_member_id")
-            # Validate input for member ID method
-            submit_disabled = not (member_id and member_id.startswith("TDFC") and len(member_id) >= 6 and member_id[4:].isdigit())
+            member_id = st.text_input("🆔 Member ID (e.g., TDFC001)", key="attendance_member_id")  # Updated example
+            member_id = member_id.strip().upper()
 
-        submitted = st.form_submit_button("✅ Mark Attendance", disabled=submit_disabled)
+        submitted = st.form_submit_button("✅ Mark Attendance")
 
         if submitted:
             if verification_method == "Name & Phone":
                 success = mark_attendance(name, phone)
             else:
-                # Extract numeric ID from TDFC format
-                numeric_id = int(member_id[4:])
-                success = mark_attendance_by_id(numeric_id)
-            # Only rerun if user takes another action, not immediately after success
+                if not member_id:
+                    st.error("❌ Please enter a Member ID")
+                    success = False
+                else:
+                    try:
+                        success = mark_attendance_by_id(member_id)  # Pass the full ID directly
+                    except Exception:
+                        st.error("❌ Invalid Member ID format. Please use format TDFC001")
+                        success = False
+            
             if success:
                 st.session_state.form_submitted = True
 
@@ -241,16 +250,29 @@ if st.session_state.admin_token:
         with st.form("new_member_form"):
             name = st.text_input("Name")
             phone = st.text_input("Phone")
+            member_code = st.text_input("Member Code (Optional)")  # Add member code field
             membership_type = st.selectbox("Membership Type", ["monthly", "quarterly", "yearly"])
             submit = st.form_submit_button("Add Member")
             if submit:
                 try:
-                    response = requests.post(f"{API_URL}/members/", json={"name": name, "phone": phone, "membership_type": membership_type}, headers=headers)
+                    data = {
+                        "name": name.strip(),
+                        "phone": phone.strip(),
+                        "member_code": member_code.strip(),  # Include member code
+                        "membership_type": membership_type,
+                        "membership_status": True
+                    }
+                    response = requests.post(
+                        f"{API_URL}/members/", 
+                        json=data,
+                        headers=headers
+                    )
                     if response.status_code == 200:
                         st.success("Member added successfully!")
-                        st.experimental_rerun()
+                        st.rerun()
                     else:
-                        st.error("Failed to add member")
+                        error_detail = response.json().get("detail", "Failed to add member")
+                        st.error(f"Failed to add member: {error_detail}")
                 except Exception as e:
                     st.error(f"Error: {str(e)}")
         
@@ -285,21 +307,10 @@ if st.session_state.admin_token:
     elif st.session_state.current_page == "✅ Attendance":
         st.header("✅ Attendance Management")
         
-        # Initialize tab state if not exists
-        if 'attendance_tab' not in st.session_state:
-            st.session_state.attendance_tab = "mark"
-        
-        # Add tabs for different views with state management
+        # Add tabs for different views
         tab1, tab2 = st.tabs(["📝 Mark Attendance", "📊 Attendance History"])
         
-        # Update tab state based on which tab is active
-        if tab1.id not in st.session_state:
-            st.session_state[tab1.id] = True
-        if tab2.id not in st.session_state:
-            st.session_state[tab2.id] = False
-            
         with tab1:
-            st.session_state.attendance_tab = "mark"
             # Reuse the same attendance form logic with admin privileges
             verification_method = st.radio(
                 "Select Verification Method",
@@ -317,7 +328,8 @@ if st.session_state.admin_token:
                     member_id = st.text_input("🆔 Member ID (e.g., TDFC01)", key="admin_attendance_member_id")
                     submit_disabled = not (member_id and member_id.startswith("TDFC") and len(member_id) >= 6 and member_id[4:].isdigit())
 
-                submitted = st.form_submit_button("✅ Mark Attendance", disabled=submit_disabled)
+                # submitted = st.form_submit_button("✅ Mark Attendance", disabled=submit_disabled)
+                submitted = st.form_submit_button("✅ Mark Attendance")
 
                 if submitted:
                     if verification_method == "Name & Phone":
@@ -327,29 +339,19 @@ if st.session_state.admin_token:
                         success = mark_attendance_by_id(numeric_id)
                     if success:
                         st.session_state.form_submitted = True
-                        st.experimental_rerun()
+                        st.rerun()
         
         with tab2:
             try:
                 # Fetch today's attendance
-                print("Fetching today's attendance...")
                 response = requests.get(f"{API_URL}/attendance/today", headers=headers)
-                print(f"Response status code: {response.status_code}")
                 if response.status_code == 200:
                     attendances = response.json()
-                    print(f"Received attendance data: {attendances}")
                     if attendances:
                         # Convert to DataFrame for better display
                         df = pd.DataFrame(attendances)
-                        print(f"DataFrame columns: {df.columns}")
-                        # Ensure we have all required columns in the correct order
-                        df = df[['id', 'member_id', 'check_in_time', 'check_out_time']]
-                        # Format member_id with TDFC prefix
                         df['member_id'] = df['member_id'].apply(lambda x: f'TDFC{str(x).zfill(2)}')
-                        # Format timestamps
                         df['check_in_time'] = pd.to_datetime(df['check_in_time']).dt.strftime('%I:%M %p')
-                        df['check_out_time'] = df['check_out_time'].apply(lambda x: pd.to_datetime(x).strftime('%I:%M %p') if pd.notna(x) else '-')
-                        # Rename columns for display
                         df.columns = ['ID', 'Member ID', 'Check-in Time', 'Check-out Time']
                         st.dataframe(df, use_container_width=True, hide_index=True)
                     else:
@@ -358,7 +360,7 @@ if st.session_state.admin_token:
                     st.error("Authentication failed. Please log out and log in again.")
                     # Clear token to force re-login
                     st.session_state.admin_token = None
-                    st.experimental_rerun()
+                    st.rerun()
                 else:
                     st.error(f"Failed to fetch attendance records. Status code: {response.status_code}")
             except requests.exceptions.RequestException as e:

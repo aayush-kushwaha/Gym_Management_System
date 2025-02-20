@@ -6,6 +6,7 @@ class MemberBase(BaseModel):
     name: str
     phone: str
     membership_type: str
+    member_code: str
 
 class MemberCreate(MemberBase):
     pass
@@ -20,6 +21,7 @@ class Member(MemberBase):
 
 class MemberBasic(BaseModel):
     id: int
+    member_code: str
     name: str
     phone: str
     membership_status: bool
@@ -33,14 +35,14 @@ class AttendanceBase(BaseModel):
 class AttendanceCreate(AttendanceBase):
     pass
 
-class Attendance(AttendanceBase):
+class AttendanceOut(BaseModel):
     id: int
+    member_id: int
     check_in_time: datetime
     check_out_time: Optional[datetime] = None
     member: Optional[MemberBasic] = None
 
     class Config:
-        from_attributes = True
         orm_mode = True
 
 class PaymentBase(BaseModel):
