@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, DateTime, Float, Boolean, ForeignKey, Index
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from sqlalchemy import text
 from .database import Base
 
 class Member(Base):
@@ -12,15 +13,15 @@ class Member(Base):
         Index('idx_member_member_code', 'member_code'),
     )
 
-    id = Column(Integer, primary_key=True, index=True)
-    member_code = Column(String, unique=True, index=True)  # For alphanumeric IDs like TDFC03
-    name = Column(String, index=True)
-    phone = Column(String, unique=True)
-    membership_type = Column(String)  # monthly/quarterly/yearly
+    id = Column(Integer, primary_key=True, autoincrement=True, server_default=text("nextval('members_id_seq'::regclass)"))
+    member_code = Column(String, unique=True, nullable=False)
+    name = Column(String, nullable=False)
+    phone = Column(String, unique=True, nullable=False)
+    membership_type = Column(String, nullable=False)
     membership_status = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    is_deleted = Column(Boolean, default=False)  # For soft delete
+    is_deleted = Column(Boolean, default=False)
     attendances = relationship("Attendance", back_populates="member")
     payments = relationship("Payment", back_populates="member")
 

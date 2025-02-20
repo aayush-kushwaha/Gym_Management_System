@@ -70,23 +70,35 @@ def create_member(member: schemas.MemberCreate, db: Session = Depends(get_db), c
     if db.query(models.Member).filter(models.Member.phone == member.phone).first():
         raise HTTPException(status_code=400, detail="Phone number already registered")
     
-    # Get the latest member ID to generate member code
-    latest_member = db.query(models.Member).order_by(models.Member.id.desc()).first()
-    next_id = 1 if not latest_member else latest_member.id + 1
+    # Check if member code already exists (if provided)
+    if member.member_code and db.query(models.Member).filter(models.Member.member_code == member.member_code).first():
+        raise HTTPException(status_code=400, detail="Member code already exists")
     
-    # Create member with generated member code
+    # Create member data
     member_data = member.dict()
-    member_data['member_code'] = f'TDFC{str(next_id).zfill(3)}'  # e.g., TDFC001
     
-    db_member = models.Member(**member_data)
-    db.add(db_member)
-    db.commit()
-    db.refresh(db_member)
-    return db_member
+    # If member_code is not provided, generate one
+    if not member_data.get('member_code'):
+        latest_member = db.query(models.Member).order_by(models.Member.id.desc()).first()
+        next_id = 1 if not latest_member else latest_member.id + 1
+        member_data['member_code'] = f'TDFC{str(next_id).zfill(3)}'
+    
+    # Ensure membership_status is set
+    member_data['membership_status'] = True
+    
+    try:
+        db_member = models.Member(**member_data)
+        db.add(db_member)
+        db.commit()
+        db.refresh(db_member)
+        return db_member
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/members/", response_model=List[schemas.Member])
 def get_members(db: Session = Depends(get_db), current_admin: models.Admin = Depends(get_current_admin)):
-    return db.query(models.Member).all()
+    return db.query(models.Member).filter(models.Member.is_deleted == False).all()
 
 # Public endpoints for member attendance
 @app.post("/attendance/mark", response_model=schemas.AttendanceOut)
@@ -243,3 +255,14 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 @app.get("/admin/me", response_model=schemas.Admin)
 async def read_admin_me(current_admin: models.Admin = Depends(get_current_admin)):
     return current_admin
+
+@app.delete("/members/{member_code}", response_model=schemas.Member)
+def delete_member(member_code: str, db: Session = Depends(get_db), current_admin: models.Admin = Depends(get_current_admin)):
+    member = db.query(models.Member).filter(models.Member.member_code == member_code).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Member not found")
+    
+    # Hard delete - remove from database
+    db.delete(member)
+    db.commit()
+    return member

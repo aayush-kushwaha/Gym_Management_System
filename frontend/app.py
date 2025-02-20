@@ -276,6 +276,7 @@ if st.session_state.admin_token:
                 except Exception as e:
                     st.error(f"Error: {str(e)}")
         
+        # In the Members Page section, update the display members list part
         # Display Members List
         st.subheader("📋 Members List")
         try:
@@ -293,9 +294,31 @@ if st.session_state.admin_token:
                     # Convert boolean to Yes/No
                     df['Active'] = df['Active'].map({True: '✅ Yes', False: '❌ No'})
                     # Format ID with TDFC prefix
-                    df['ID'] = df['ID'].apply(lambda x: f'TDFC{str(x).zfill(2)}')
-                    # Display the table with index hidden
-                    st.dataframe(df, use_container_width=True, hide_index=True)
+                    df['ID'] = df['ID'].apply(lambda x: f'TDFC{str(x).zfill(3)}')
+                    
+                    # Add delete buttons
+                    for index, row in df.iterrows():
+                        cols = st.columns([2, 2, 2, 2, 1, 1.5, 0.5])
+                        cols[0].write(row['ID'])
+                        cols[1].write(row['Name'])
+                        cols[2].write(row['Phone'])
+                        cols[3].write(row['Membership Type'])
+                        cols[4].write(row['Active'])
+                        cols[5].write(row['Joined Date'])
+                        if cols[6].button('🗑️', key=f"delete_{row['ID']}", help="Delete member"):
+                            if st.session_state.admin_token:
+                                try:
+                                    delete_response = requests.delete(
+                                        f"{API_URL}/members/{row['ID']}", 
+                                        headers=headers
+                                    )
+                                    if delete_response.status_code == 200:
+                                        st.success(f"Member {row['Name']} deleted successfully!")
+                                        st.rerun()
+                                    else:
+                                        st.error("Failed to delete member")
+                                except Exception as e:
+                                    st.error(f"Error: {str(e)}")
                 else:
                     st.info("No members registered yet.")
             else:
