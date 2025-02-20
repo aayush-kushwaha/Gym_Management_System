@@ -16,8 +16,7 @@ from .database import engine, Base
 # Load environment variables
 load_dotenv()
 
-# Drop and recreate database tables
-Base.metadata.drop_all(bind=engine)
+# Create tables if they don't exist
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
