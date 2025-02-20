@@ -4,7 +4,7 @@ import pandas as pd
 import random
 from datetime import datetime
 
-API_URL = "http://localhost:8000"
+API_URL = "https://gym-management-system-ad16.onrender.com"
 
 # Page config
 st.set_page_config(page_title="Gym Management System", page_icon="assets/favicon.jpg", layout="wide")
