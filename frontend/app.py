@@ -189,7 +189,7 @@ if st.session_state.admin_token:
 if not st.session_state.admin_token:
     col1, col2, col3 = st.columns([2, 1, 2])
     with col2:
-        st.image("assets/dragon_fitness_logo.jpg", width=500)
+        st.image("https://scontent.fktm18-1.fna.fbcdn.net/v/t39.30808-6/328454444_544635850977366_762368089696721171_n.jpg?_nc_cat=111&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeGAXKDebhtEVZf4STNbjLS79oQKDVphHcX2hAoNWmEdxVxEYOHw2VkqOBaSThVTDhVXQX88vM4NjuT4U2f1FTrY&_nc_ohc=DCS00hGkuGkQ7kNvgEMATIG&_nc_oc=AdjfQyn5zyO13qqwMZXqAIPAusU4DqUrBCuiSx4xt1poCoIeFgykrEabuQ7XZy3TZP_5u-wzYy2XLRwacAAHuq1Q&_nc_zt=23&_nc_ht=scontent.fktm18-1.fna&_nc_gid=AS-XfrAEkmsBWOHgHpBi8ap&oh=00_AYC6cYxxT6nrt_8eDsTetlxKiFRzSQqhG48WTIvU972QYQ&oe=67BCD571", width=500)
     
     current_time = datetime.now()
     st.markdown(f"<h3 style='text-align: center;'>{current_time.strftime('%A, %B %d, %Y')}</h3>", unsafe_allow_html=True)
