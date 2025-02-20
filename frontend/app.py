@@ -7,7 +7,7 @@ from datetime import datetime
 API_URL = "http://localhost:8000"
 
 # Page config
-st.set_page_config(page_title="Gym Management System", page_icon="assets/dragon_fitness_logo.jpg", layout="wide")
+st.set_page_config(page_title="Gym Management System", page_icon="assets/favicon.jpg", layout="wide")
 
 # Initialize session states
 if 'admin_token' not in st.session_state:
