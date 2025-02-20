@@ -3,6 +3,7 @@ import requests
 import pandas as pd
 import random
 from datetime import datetime
+import pytz
 
 API_URL = "https://gym-management-system-ad16.onrender.com"
 
@@ -186,12 +187,14 @@ if st.session_state.admin_token:
         logout()
 
 # If not logged in, show Attendance Form
+# In the attendance form section, replace the current_time code with:
 if not st.session_state.admin_token:
     col1, col2, col3 = st.columns([2, 1, 2])
     with col2:
         st.image("https://scontent.fktm18-1.fna.fbcdn.net/v/t39.30808-6/328454444_544635850977366_762368089696721171_n.jpg?_nc_cat=111&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeGAXKDebhtEVZf4STNbjLS79oQKDVphHcX2hAoNWmEdxVxEYOHw2VkqOBaSThVTDhVXQX88vM4NjuT4U2f1FTrY&_nc_ohc=DCS00hGkuGkQ7kNvgEMATIG&_nc_oc=AdjfQyn5zyO13qqwMZXqAIPAusU4DqUrBCuiSx4xt1poCoIeFgykrEabuQ7XZy3TZP_5u-wzYy2XLRwacAAHuq1Q&_nc_zt=23&_nc_ht=scontent.fktm18-1.fna&_nc_gid=AS-XfrAEkmsBWOHgHpBi8ap&oh=00_AYC6cYxxT6nrt_8eDsTetlxKiFRzSQqhG48WTIvU972QYQ&oe=67BCD571", width=300)
     
-    current_time = datetime.now()
+    nepal_tz = pytz.timezone('Asia/Kathmandu')
+    current_time = datetime.now(nepal_tz)
     st.markdown(f"<h3 style='text-align: center;'>{current_time.strftime('%A, %B %d, %Y')}</h3>", unsafe_allow_html=True)
     st.markdown(f"<h2 style='text-align: center;'>{current_time.strftime('%I:%M %p')}</h2>", unsafe_allow_html=True)
     st.markdown("<h1 style='text-align: center;'>🏋️‍♂️ Gym Check-in</h1>", unsafe_allow_html=True)
