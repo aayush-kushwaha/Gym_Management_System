@@ -5,7 +5,7 @@ import random
 from datetime import datetime
 import pytz
 
-API_URL = "https://gym-management-system-ad16.onrender.com"
+API_URL = "http://localhost:8000"
 
 # Page config
 st.set_page_config(page_title="Gym Management System", page_icon="assets/favicon.jpg", layout="wide")
@@ -303,16 +303,22 @@ if st.session_state.admin_token:
                     # Format ID with TDFC prefix
                     df['ID'] = df['ID'].apply(lambda x: f'TDFC{str(x).zfill(3)}')
                     
-                    # Add delete buttons
+                    # Add edit and delete buttons
                     for index, row in df.iterrows():
-                        cols = st.columns([2, 2, 2, 2, 1, 1.5, 0.5])
+                        cols = st.columns([2, 2, 2, 2, 1, 1.5, 0.5, 0.5])
                         cols[0].write(row['ID'])
                         cols[1].write(row['Name'])
                         cols[2].write(row['Phone'])
                         cols[3].write(row['Membership Type'])
                         cols[4].write(row['Active'])
                         cols[5].write(row['Joined Date'])
-                        if cols[6].button('🗑️', key=f"delete_{row['ID']}", help="Delete member"):
+                        
+                        # Edit button
+                        if cols[6].button('✏️', key=f"edit_{row['ID']}", help="Edit member"):
+                            st.session_state[f"editing_{row['ID']}"] = True
+                        
+                        # Delete button
+                        if cols[7].button('🗑️', key=f"delete_{row['ID']}", help="Delete member"):
                             if st.session_state.admin_token:
                                 try:
                                     delete_response = requests.delete(
@@ -326,6 +332,48 @@ if st.session_state.admin_token:
                                         st.error("Failed to delete member")
                                 except Exception as e:
                                     st.error(f"Error: {str(e)}")
+                        
+                        # Edit form
+                        if st.session_state.get(f"editing_{row['ID']}", False):
+                            with st.form(key=f"edit_form_{row['ID']}"):
+                                st.subheader(f"Edit Member: {row['Name']}")
+                                new_name = st.text_input("Name", value=row['Name'])
+                                new_phone = st.text_input("Phone", value=row['Phone'])
+                                new_membership_type = st.selectbox(
+                                    "Membership Type",
+                                    ["monthly", "quarterly", "yearly"],
+                                    index=["monthly", "quarterly", "yearly"].index(row['Membership Type'])
+                                )
+                                
+                                col1, col2 = st.columns(2)
+                                update = col1.form_submit_button("Update")
+                                cancel = col2.form_submit_button("Cancel")
+                                
+                                if cancel:
+                                    del st.session_state[f"editing_{row['ID']}"]
+                                    st.rerun()
+                                
+                                if update:
+                                    try:
+                                        update_data = {
+                                            "name": new_name,
+                                            "phone": new_phone,
+                                            "membership_type": new_membership_type,
+                                            "member_code": row['ID']
+                                        }
+                                        update_response = requests.put(
+                                            f"{API_URL}/members/{row['ID']}",
+                                            json=update_data,
+                                            headers=headers
+                                        )
+                                        if update_response.status_code == 200:
+                                            st.success("Member updated successfully!")
+                                            del st.session_state[f"editing_{row['ID']}"]
+                                            st.rerun()
+                                        else:
+                                            st.error(f"Failed to update member: {update_response.json().get('detail', '')}")
+                                    except Exception as e:
+                                        st.error(f"Error updating member: {str(e)}")
                 else:
                     st.info("No members registered yet.")
             else:

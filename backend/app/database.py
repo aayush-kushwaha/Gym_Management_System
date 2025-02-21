@@ -10,13 +10,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 engine = create_engine(DATABASE_URL)
 
-# Drop sequences if they exist
-with engine.connect() as conn:
-    conn.execute(text("DROP SEQUENCE IF EXISTS members_id_seq CASCADE"))
-    conn.execute(text("DROP SEQUENCE IF EXISTS attendances_id_seq CASCADE"))
-    conn.execute(text("DROP SEQUENCE IF EXISTS payments_id_seq CASCADE"))
-    conn.execute(text("DROP SEQUENCE IF EXISTS admins_id_seq CASCADE"))
-    conn.commit()
+
 
 # Create a session factory with relationship loading support
 SessionLocal = sessionmaker(

@@ -256,11 +256,29 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 async def read_admin_me(current_admin: models.Admin = Depends(get_current_admin)):
     return current_admin
 
+@app.put("/members/{member_code}", response_model=schemas.Member)
+def update_member(member_code: str, member_update: schemas.MemberBase, db: Session = Depends(get_db), current_admin: models.Admin = Depends(get_current_admin)):
+    member = db.query(models.Member).filter(models.Member.member_code == member_code, models.Member.is_deleted == False).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Member not found")
+    
+    for key, value in member_update.dict(exclude_unset=True).items():
+        setattr(member, key, value)
+    
+    db.commit()
+    db.refresh(member)
+    return member
+
 @app.delete("/members/{member_code}", response_model=schemas.Member)
 def delete_member(member_code: str, db: Session = Depends(get_db), current_admin: models.Admin = Depends(get_current_admin)):
     member = db.query(models.Member).filter(models.Member.member_code == member_code).first()
     if not member:
         raise HTTPException(status_code=404, detail="Member not found")
+    
+    # Soft delete - set is_deleted flag to True
+    member.is_deleted = True
+    db.commit()
+    return member
     
     # Hard delete - remove from database
     db.delete(member)
