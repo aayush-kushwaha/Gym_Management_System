@@ -376,7 +376,7 @@ if not st.session_state.admin_token:
     st.markdown("<h1 style='text-align: center;'>🏋️‍♂️ Gym Check-in</h1>", unsafe_allow_html=True)
 
     # Create tabs for attendance marking and viewing
-    tab1, tab2 = st.tabs(["📝 Mark Attendance", "📊 Gym Playlist"])
+    tab1, tab2 = st.tabs(["📝 Mark Attendance", "🎧 Workout Playlist"])
 
     with tab1:
         # Add verification method toggle with unique key
