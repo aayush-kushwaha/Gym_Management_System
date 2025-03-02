@@ -360,9 +360,14 @@ if st.session_state.admin_token:
 # If not logged in, show Attendance Form
 # In the attendance form section, replace the current_time code with:
 if not st.session_state.admin_token:
-    col1, col2, col3 = st.columns([2, 1, 2])
-    with col2:
-        st.image("https://i.imgur.com/SqPz1Mp.jpeg", width=300)
+    st.markdown(
+        """
+        <div style='display: flex; justify-content: center; align-items: center; padding: 20px;'>
+            <img src='https://i.imgur.com/SqPz1Mp.jpeg' style='max-width: 300px; width: 100%; height: auto;'>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
     
     nepal_tz = pytz.timezone('Asia/Kathmandu')
     current_time = datetime.now(nepal_tz)
@@ -371,7 +376,7 @@ if not st.session_state.admin_token:
     st.markdown("<h1 style='text-align: center;'>🏋️‍♂️ Gym Check-in</h1>", unsafe_allow_html=True)
 
     # Create tabs for attendance marking and viewing
-    tab1, tab2 = st.tabs(["📝 Mark Attendance", "📊 Today's Attendance"])
+    tab1, tab2 = st.tabs(["📝 Mark Attendance", "📊 Gym Playlist"])
 
     with tab1:
         # Add verification method toggle with unique key
@@ -411,32 +416,37 @@ if not st.session_state.admin_token:
                             st.rerun()
     
     with tab2:
-        try:
-            # Fetch today's attendance
-            headers = {}
-            if st.session_state.admin_token:
-                headers["Authorization"] = f"Bearer {st.session_state.admin_token}"
+        st.info("🔴▶️[Hindi Workout Mix](https://www.youtube.com/watch?v=CBqdVosM4gU&list=PLCZ6y5l3oyobiBPbAdrYqqfBhALev1ZRT)")
+        st.info("🔴▶️[Punjabi Workout Mix](https://www.youtube.com/watch?v=h8Gjowa2fEA&list=RDCLAK5uy_mfZNbqLGOHWAFPeZiSfKN5x1d6sfOW_VI&start_radio=1)")
+        st.info("🔴▶️[Intense Cardio Mix](https://www.youtube.com/watch?v=Z92JGegBYm0&list=PLu0ocO48LFms5WsI1ipaeanxqRjn2fC_5)")
+        st.info("🔴▶️[Bhojpuri Workout Mix](https://www.youtube.com/watch?v=Vqn_uNb-_sU&list=PLBY8lxIP8wt951OZcPg0sLifdQs9EhD5-)")
+    # with tab2:
+    #     try:
+    #         # Fetch today's attendance
+    #         headers = {}
+    #         if st.session_state.admin_token:
+    #             headers["Authorization"] = f"Bearer {st.session_state.admin_token}"
                 
-            response = requests.get(f"{API_URL}/attendance/today", headers=headers)
-            if response.status_code == 200:
-                attendances = response.json()
-                if attendances:
-                    # Convert to DataFrame for better display
-                    df = pd.DataFrame(attendances)
-                    df['member_id'] = df['member_id'].apply(lambda x: f'TDFC{str(x).zfill(2)}')
-                    df['check_in_time'] = pd.to_datetime(df['check_in_time']).dt.strftime('%I:%M %p')
-                    df.columns = ['ID', 'Member ID', 'Check-in Time', 'Check-out Time']
-                    st.dataframe(df, use_container_width=True, hide_index=True)
-                else:
-                    st.info("No attendance records for today.")
-            elif response.status_code == 401:
-                st.error("Authentication failed. Please log out and log in again.")
-                # Clear token to force re-login
-                st.session_state.admin_token = None
-                st.rerun()
-            else:
-                st.error(f"Failed to fetch attendance records. Status code: {response.status_code}")
-        except requests.exceptions.RequestException as e:
-            st.error(f"Network error: {str(e)}")
-        except Exception as e:
-            st.error(f"Error fetching attendance: {str(e)}")
+    #         response = requests.get(f"{API_URL}/attendance/today", headers=headers)
+    #         if response.status_code == 200:
+    #             attendances = response.json()
+    #             if attendances:
+    #                 # Convert to DataFrame for better display
+    #                 df = pd.DataFrame(attendances)
+    #                 df['member_id'] = df['member_id'].apply(lambda x: f'TDFC{str(x).zfill(2)}')
+    #                 df['check_in_time'] = pd.to_datetime(df['check_in_time']).dt.strftime('%I:%M %p')
+    #                 df.columns = ['ID', 'Member ID', 'Check-in Time', 'Check-out Time']
+    #                 st.dataframe(df, use_container_width=True, hide_index=True)
+    #             else:
+    #                 st.info("No attendance records for today.")
+    #         elif response.status_code == 401:
+    #             st.error("Authentication failed. Please log out and log in again.")
+    #             # Clear token to force re-login
+    #             st.session_state.admin_token = None
+    #             st.rerun()
+    #         else:
+    #             st.error(f"Failed to fetch attendance records. Status code: {response.status_code}")
+    #     except requests.exceptions.RequestException as e:
+    #         st.error(f"Network error: {str(e)}")
+    #     except Exception as e:
+    #         st.error(f"Error fetching attendance: {str(e)}")
