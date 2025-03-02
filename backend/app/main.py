@@ -6,7 +6,8 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from jose import JWTError
 from sqlalchemy import func
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session
+from sqlalchemy.orm import joinedload
 from dotenv import load_dotenv
 import os
 
@@ -178,7 +179,7 @@ async def get_today_attendance(db: Session = Depends(get_db)):
             models.Member,
             models.Attendance.member_id == models.Member.id
         ).options(
-            db.joinedload(models.Attendance.member)
+            joinedload(models.Attendance.member)
         ).filter(
             func.date(models.Attendance.check_in_time) == today
         ).order_by(models.Attendance.check_in_time.desc()).all()

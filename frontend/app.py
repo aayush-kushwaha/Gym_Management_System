@@ -1,11 +1,12 @@
 import streamlit as st
-import requests
+import requests 
 import pandas as pd
 import random
 from datetime import datetime
 import pytz
 
 API_URL = "https://gym-management-system-ad16.onrender.com"
+# API_URL = "http://127.0.0.1:8000"
 
 # Page config
 st.set_page_config(page_title="Gym Management System", page_icon="assets/favicon.jpg", layout="wide")
@@ -58,7 +59,12 @@ greetings = [
 # Function to mark attendance by ID
 def mark_attendance_by_id(member_id):
     try:
-        # Use the member_id directly since it's already in the correct format
+        # Convert member_id to string and ensure it's in TDFC format
+        member_id = str(member_id)
+        if not member_id.startswith('TDFC'):
+            member_id = f'TDFC{member_id.zfill(3)}'
+
+        # Use the member_id with TDFC format
         response = requests.get(f"{API_URL}/members/verify_by_id/{member_id}")
         if response.status_code == 404:
             st.error("❌ Invalid Member ID")
@@ -186,6 +192,171 @@ if st.session_state.admin_token:
     if st.sidebar.button("🚪 Logout"):
         logout()
 
+    # Admin Dashboard Navigation
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### Navigation")
+    pages = [
+        "📊 Dashboard",
+        "👥 Members",
+        "📝 Attendance",
+        "💰 Payments"
+    ]
+    st.session_state.current_page = st.sidebar.radio("Go to", pages)
+
+    # Main Content Area
+    st.title(st.session_state.current_page)
+
+    if st.session_state.current_page == "📊 Dashboard":
+        # Dashboard Overview
+        col1, col2, col3 = st.columns(3)
+        
+        try:
+            # Fetch statistics
+            headers = {"Authorization": f"Bearer {st.session_state.admin_token}"}
+            
+            # Get all members
+            response = requests.get(f"{API_URL}/members/", headers=headers)
+            if response.status_code == 200:
+                members = response.json()
+                active_members = len([m for m in members if m['membership_status']])
+                
+                with col1:
+                    st.metric("Total Members", len(members))
+                with col2:
+                    st.metric("Active Members", active_members)
+                with col3:
+                    st.metric("Inactive Members", len(members) - active_members)
+
+            # Get today's attendance
+            response = requests.get(f"{API_URL}/attendance/today", headers=headers)
+            if response.status_code == 200:
+                today_attendance = response.json()
+                st.subheader("Today's Check-ins")
+                if today_attendance:
+                    df = pd.DataFrame(today_attendance)
+                    df['check_in_time'] = pd.to_datetime(df['check_in_time']).dt.strftime('%I:%M %p')
+                    df['member_id'] = df.apply(lambda x: x['member']['member_code'] if x['member'] else x['member_id'], axis=1)
+                    df = df[['id', 'member_id', 'check_in_time', 'check_out_time']]
+                    df.columns = ['ID', 'Member ID', 'Check-in Time', 'Check-out Time']
+                    st.dataframe(df, use_container_width=True, hide_index=True)
+                else:
+                    st.info("No check-ins recorded today")
+
+        except Exception as e:
+            st.error(f"Error loading dashboard: {str(e)}")
+
+    elif st.session_state.current_page == "👥 Members":
+        # Members Management
+        st.subheader("Member Management")
+        
+        # Add Member Form
+        with st.expander("➕ Add New Member"):
+            with st.form("add_member_form"):
+                col1, col2 = st.columns(2)
+                with col1:
+                    name = st.text_input("Full Name")
+                    phone = st.text_input("Phone Number")
+                with col2:
+                    membership_type = st.selectbox("Membership Type", ["Monthly", "Quarterly", "Yearly"])
+                    member_code = st.text_input("Member Code (Optional)")
+                
+                submitted = st.form_submit_button("Add Member")
+                if submitted:
+                    try:
+                        response = requests.post(
+                            f"{API_URL}/members/",
+                            headers={"Authorization": f"Bearer {st.session_state.admin_token}"},
+                            json={
+                                "name": name,
+                                "phone": phone,
+                                "membership_type": membership_type,
+                                "member_code": member_code if member_code else None
+                            }
+                        )
+                        if response.status_code == 200:
+                            st.success("✅ Member added successfully!")
+                            st.rerun()
+                        else:
+                            st.error("Failed to add member")
+                    except Exception as e:
+                        st.error(f"Error: {str(e)}")
+
+        # Members List
+        try:
+            response = requests.get(
+                f"{API_URL}/members/",
+                headers={"Authorization": f"Bearer {st.session_state.admin_token}"}
+            )
+            if response.status_code == 200:
+                members = response.json()
+                if members:
+                    df = pd.DataFrame(members)
+                    df['membership_status'] = df['membership_status'].map({True: '✅ Active', False: '❌ Inactive'})
+                    df['created_at'] = pd.to_datetime(df['created_at']).dt.strftime('%Y-%m-%d')
+                    df = df[['member_code', 'name', 'phone', 'membership_type', 'membership_status', 'created_at']]
+                    df.columns = ['Member ID', 'Name', 'Phone', 'Membership Type', 'Status', 'Join Date']
+                    st.dataframe(df, use_container_width=True, hide_index=True)
+                else:
+                    st.info("No members found")
+        except Exception as e:
+            st.error(f"Error loading members: {str(e)}")
+
+    elif st.session_state.current_page == "📝 Attendance":
+        st.subheader("Attendance Records")
+        try:
+            response = requests.get(
+                f"{API_URL}/attendance/today",
+                headers={"Authorization": f"Bearer {st.session_state.admin_token}"}
+            )
+            if response.status_code == 200:
+                attendances = response.json()
+                if attendances:
+                    df = pd.DataFrame(attendances)
+                    df['member_id'] = df.apply(lambda x: x['member']['member_code'] if x['member'] else x['member_id'], axis=1)
+                    df['check_in_time'] = pd.to_datetime(df['check_in_time']).dt.strftime('%Y-%m-%d %I:%M %p')
+                    df = df[['id', 'member_id', 'check_in_time', 'check_out_time']]
+                    df.columns = ['ID', 'Member ID', 'Check-in Time', 'Check-out Time']
+                    st.dataframe(df, use_container_width=True, hide_index=True)
+                else:
+                    st.info("No attendance records found")
+        except Exception as e:
+            st.error(f"Error loading attendance: {str(e)}")
+
+    elif st.session_state.current_page == "💰 Payments":
+        st.subheader("Payment Records")
+        # Add Payment Form
+        with st.expander("💳 Record New Payment"):
+            with st.form("add_payment_form"):
+                col1, col2 = st.columns(2)
+                with col1:
+                    member_id = st.text_input("Member ID")
+                    amount = st.number_input("Amount", min_value=0.0, format="%f")
+                with col2:
+                    next_due_date = st.date_input("Next Due Date")
+                    payment_reference = st.text_input("Payment Reference")
+                
+                submitted = st.form_submit_button("Record Payment")
+                if submitted:
+                    try:
+                        response = requests.post(
+                            f"{API_URL}/payments/",
+                            headers={"Authorization": f"Bearer {st.session_state.admin_token}"},
+                            json={
+                                "member_id": member_id,
+                                "amount": amount,
+                                "next_due_date": next_due_date.isoformat(),
+                                "payment_reference": payment_reference
+                            }
+                        )
+                        if response.status_code == 200:
+                            st.success("✅ Payment recorded successfully!")
+                            st.rerun()
+                        else:
+                            st.error("Failed to record payment")
+                    except Exception as e:
+                        st.error(f"Error: {str(e)}")
+
+
 # If not logged in, show Attendance Form
 # In the attendance form section, replace the current_time code with:
 if not st.session_state.admin_token:
@@ -199,201 +370,73 @@ if not st.session_state.admin_token:
     st.markdown(f"<h2 style='text-align: center;'>{current_time.strftime('%I:%M %p')}</h2>", unsafe_allow_html=True)
     st.markdown("<h1 style='text-align: center;'>🏋️‍♂️ Gym Check-in</h1>", unsafe_allow_html=True)
 
-    # Add verification method toggle with unique key
-    verification_method = st.radio(
-        "Select Verification Method",
-        ["Name & Phone", "Member ID"],
-        horizontal=True,
-        key="verification_method_main"
-    )
+    # Create tabs for attendance marking and viewing
+    tab1, tab2 = st.tabs(["📝 Mark Attendance", "📊 Today's Attendance"])
 
-    with st.form("attendance_form"):
-        if verification_method == "Name & Phone":
-            name = st.text_input("👤 Full Name", key="attendance_name")
-            phone = st.text_input("📱 Phone Number", key="attendance_phone")
-            submit_disabled = not (name and len(name) >= 3 and phone and len(phone) == 10 and phone.isdigit())
-        else:
-            member_id = st.text_input("🆔 Member ID (e.g., TDFC001)", key="attendance_member_id")  # Updated example
-            member_id = member_id.strip().upper()
+    with tab1:
+        # Add verification method toggle with unique key
+        verification_method = st.radio(
+            "Select Verification Method",
+            ["Name & Phone", "Member ID"],
+            horizontal=True,
+            key="verification_method_main"
+        )
 
-        submitted = st.form_submit_button("✅ Mark Attendance")
-
-        if submitted:
+        with st.form("attendance_form"):
             if verification_method == "Name & Phone":
-                success = mark_attendance(name, phone)
+                name = st.text_input("👤 Full Name", key="attendance_name")
+                phone = st.text_input("📱 Phone Number", key="attendance_phone")
+                submit_disabled = not (name and len(name) >= 3 and phone and len(phone) == 10 and phone.isdigit())
             else:
-                if not member_id:
-                    st.error("❌ Please enter a Member ID")
-                    success = False
-                else:
-                    try:
-                        success = mark_attendance_by_id(member_id)  # Pass the full ID directly
-                    except Exception:
-                        st.error("❌ Invalid Member ID format. Please use format TDFC001")
-                        success = False
-            
-            if success:
-                st.session_state.form_submitted = True
-
-# Admin Dashboard
-if st.session_state.admin_token:
-    headers = {"Authorization": f"Bearer {st.session_state.admin_token}"}
-
-    # Navigation
-    st.session_state.current_page = st.sidebar.radio(
-        "📱 Navigation",
-        ["📊 Dashboard", "👥 Members", "✅ Attendance", "💰 Payments"],
-        index=["📊 Dashboard", "👥 Members", "✅ Attendance", "💰 Payments"].index(st.session_state.current_page),
-    )
-
-    # Dashboard Page
-    if st.session_state.current_page == "📊 Dashboard":
-        st.header("📊 Dashboard")
-        st.write("Overview of gym statistics and attendance metrics.")
+                member_id = st.text_input("🆔 Member ID (e.g., TDFC001)", key="attendance_member_id")  # Updated example
+                member_id = member_id.strip().upper()
     
-    # Members Page
-    elif st.session_state.current_page == "👥 Members":
-        st.header("👥 Member Management")
-        with st.form("new_member_form"):
-            name = st.text_input("Name")
-            phone = st.text_input("Phone")
-            member_code = st.text_input("Member Code (Optional)")  # Add member code field
-            membership_type = st.selectbox("Membership Type", ["monthly", "quarterly", "yearly"])
-            submit = st.form_submit_button("Add Member")
-            if submit:
-                try:
-                    data = {
-                        "name": name.strip(),
-                        "phone": phone.strip(),
-                        "member_code": member_code.strip(),  # Include member code
-                        "membership_type": membership_type,
-                        "membership_status": True
-                    }
-                    response = requests.post(
-                        f"{API_URL}/members/", 
-                        json=data,
-                        headers=headers
-                    )
-                    if response.status_code == 200:
-                        st.success("Member added successfully!")
-                        st.rerun()
-                    else:
-                        error_detail = response.json().get("detail", "Failed to add member")
-                        st.error(f"Failed to add member: {error_detail}")
-                except Exception as e:
-                    st.error(f"Error: {str(e)}")
-        
-        # In the Members Page section, update the display members list part
-        # Display Members List
-        st.subheader("📋 Members List")
-        try:
-            response = requests.get(f"{API_URL}/members/", headers=headers)
-            if response.status_code == 200:
-                members = response.json()
-                if members:
-                    # Convert to DataFrame for better display
-                    df = pd.DataFrame(members)
-                    # Reorder and rename columns
-                    df = df[['id', 'name', 'phone', 'membership_type', 'membership_status', 'created_at']]
-                    df.columns = ['ID', 'Name', 'Phone', 'Membership Type', 'Active', 'Joined Date']
-                    # Format the date
-                    df['Joined Date'] = pd.to_datetime(df['Joined Date']).dt.strftime('%Y-%m-%d')
-                    # Convert boolean to Yes/No
-                    df['Active'] = df['Active'].map({True: '✅ Yes', False: '❌ No'})
-                    # Format ID with TDFC prefix
-                    df['ID'] = df['ID'].apply(lambda x: f'TDFC{str(x).zfill(3)}')
-                    
-                    # Add delete buttons
-                    for index, row in df.iterrows():
-                        cols = st.columns([2, 2, 2, 2, 1, 1.5, 0.5])
-                        cols[0].write(row['ID'])
-                        cols[1].write(row['Name'])
-                        cols[2].write(row['Phone'])
-                        cols[3].write(row['Membership Type'])
-                        cols[4].write(row['Active'])
-                        cols[5].write(row['Joined Date'])
-                        if cols[6].button('🗑️', key=f"delete_{row['ID']}", help="Delete member"):
-                            if st.session_state.admin_token:
-                                try:
-                                    delete_response = requests.delete(
-                                        f"{API_URL}/members/{row['ID']}", 
-                                        headers=headers
-                                    )
-                                    if delete_response.status_code == 200:
-                                        st.success(f"Member {row['Name']} deleted successfully!")
-                                        st.rerun()
-                                    else:
-                                        st.error("Failed to delete member")
-                                except Exception as e:
-                                    st.error(f"Error: {str(e)}")
-                else:
-                    st.info("No members registered yet.")
-            else:
-                st.error("Failed to fetch members list")
-        except Exception as e:
-            st.error(f"Error fetching members: {str(e)}")
-
-    # Attendance Page
-    elif st.session_state.current_page == "✅ Attendance":
-        st.header("✅ Attendance Management")
-        
-        # Add tabs for different views
-        tab1, tab2 = st.tabs(["📝 Mark Attendance", "📊 Attendance History"])
-        
-        with tab1:
-            # Reuse the same attendance form logic with admin privileges
-            verification_method = st.radio(
-                "Select Verification Method",
-                ["Name & Phone", "Member ID"],
-                horizontal=True,
-                key="verification_method_admin"
-            )
-
-            with st.form("admin_attendance_form"):
+            submitted = st.form_submit_button("✅ Mark Attendance")
+    
+            if submitted:
                 if verification_method == "Name & Phone":
-                    name = st.text_input("👤 Full Name", key="admin_attendance_name")
-                    phone = st.text_input("📱 Phone Number", key="admin_attendance_phone")
-                    submit_disabled = not (name and len(name) >= 3 and phone and len(phone) == 10 and phone.isdigit())
+                    success = mark_attendance(name, phone)
                 else:
-                    member_id = st.text_input("🆔 Member ID (e.g., TDFC01)", key="admin_attendance_member_id")
-                    submit_disabled = not (member_id and member_id.startswith("TDFC") and len(member_id) >= 6 and member_id[4:].isdigit())
-
-                # submitted = st.form_submit_button("✅ Mark Attendance", disabled=submit_disabled)
-                submitted = st.form_submit_button("✅ Mark Attendance")
-
-                if submitted:
-                    if verification_method == "Name & Phone":
-                        success = mark_attendance(name, phone)
+                    if not member_id:
+                        st.error("❌ Please enter a Member ID")
+                        success = False
                     else:
-                        numeric_id = int(member_id[4:])
-                        success = mark_attendance_by_id(numeric_id)
-                    if success:
-                        st.session_state.form_submitted = True
-                        st.rerun()
-        
-        with tab2:
-            try:
-                # Fetch today's attendance
-                response = requests.get(f"{API_URL}/attendance/today", headers=headers)
-                if response.status_code == 200:
-                    attendances = response.json()
-                    if attendances:
-                        # Convert to DataFrame for better display
-                        df = pd.DataFrame(attendances)
-                        df['member_id'] = df['member_id'].apply(lambda x: f'TDFC{str(x).zfill(2)}')
-                        df['check_in_time'] = pd.to_datetime(df['check_in_time']).dt.strftime('%I:%M %p')
-                        df.columns = ['ID', 'Member ID', 'Check-in Time', 'Check-out Time']
-                        st.dataframe(df, use_container_width=True, hide_index=True)
-                    else:
-                        st.info("No attendance records for today.")
-                elif response.status_code == 401:
-                    st.error("Authentication failed. Please log out and log in again.")
-                    # Clear token to force re-login
-                    st.session_state.admin_token = None
-                    st.rerun()
+                        try:
+                            success = mark_attendance_by_id(member_id)  # Pass the full ID directly
+                        except Exception:
+                            st.error("❌ Invalid Member ID format. Please use format TDFC001")
+                            success = False
+                        if success:
+                            st.session_state.form_submitted = True
+                            st.rerun()
+    
+    with tab2:
+        try:
+            # Fetch today's attendance
+            headers = {}
+            if st.session_state.admin_token:
+                headers["Authorization"] = f"Bearer {st.session_state.admin_token}"
+                
+            response = requests.get(f"{API_URL}/attendance/today", headers=headers)
+            if response.status_code == 200:
+                attendances = response.json()
+                if attendances:
+                    # Convert to DataFrame for better display
+                    df = pd.DataFrame(attendances)
+                    df['member_id'] = df['member_id'].apply(lambda x: f'TDFC{str(x).zfill(2)}')
+                    df['check_in_time'] = pd.to_datetime(df['check_in_time']).dt.strftime('%I:%M %p')
+                    df.columns = ['ID', 'Member ID', 'Check-in Time', 'Check-out Time']
+                    st.dataframe(df, use_container_width=True, hide_index=True)
                 else:
-                    st.error(f"Failed to fetch attendance records. Status code: {response.status_code}")
-            except requests.exceptions.RequestException as e:
-                st.error(f"Network error: {str(e)}")
-            except Exception as e:
-                st.error(f"Error fetching attendance: {str(e)}")
+                    st.info("No attendance records for today.")
+            elif response.status_code == 401:
+                st.error("Authentication failed. Please log out and log in again.")
+                # Clear token to force re-login
+                st.session_state.admin_token = None
+                st.rerun()
+            else:
+                st.error(f"Failed to fetch attendance records. Status code: {response.status_code}")
+        except requests.exceptions.RequestException as e:
+            st.error(f"Network error: {str(e)}")
+        except Exception as e:
+            st.error(f"Error fetching attendance: {str(e)}")

@@ -1,7 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, Float, Boolean, ForeignKey, Index
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from sqlalchemy import text
 from .database import Base
 
 class Member(Base):
@@ -13,7 +12,7 @@ class Member(Base):
         Index('idx_member_member_code', 'member_code'),
     )
 
-    id = Column(Integer, primary_key=True, autoincrement=True, server_default=text("nextval('members_id_seq'::regclass)"))
+    id = Column(Integer, primary_key=True, autoincrement=True)
     member_code = Column(String, unique=True, nullable=False)
     name = Column(String, nullable=False)
     phone = Column(String, unique=True, nullable=False)
@@ -32,7 +31,7 @@ class Attendance(Base):
         Index('idx_attendance_date', 'check_in_time'),
     )
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     member_id = Column(Integer, ForeignKey("members.id"))
     check_in_time = Column(DateTime(timezone=True), server_default=func.now())
     check_out_time = Column(DateTime(timezone=True), nullable=True)
@@ -46,7 +45,7 @@ class Payment(Base):
         Index('idx_payment_reference', 'payment_reference'),
     )
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     member_id = Column(Integer, ForeignKey("members.id"))
     amount = Column(Float)
     payment_date = Column(DateTime(timezone=True), server_default=func.now())
@@ -60,7 +59,7 @@ class Admin(Base):
         Index('idx_admin_username', 'username'),
     )
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
