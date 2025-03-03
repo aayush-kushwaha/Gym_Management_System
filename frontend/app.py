@@ -5,8 +5,8 @@ import random
 from datetime import datetime
 import pytz
 
-# API_URL = "https://gym-management-system-ad16.onrender.com"
-API_URL = "http://127.0.0.1:8000"
+API_URL = "https://gym-management-system-ad16.onrender.com"
+# API_URL = "http://127.0.0.1:8000"
 
 # Page config
 st.set_page_config(page_title="Gym Management System", page_icon="assets/favicon.jpg", layout="wide")
