@@ -5,8 +5,8 @@ import random
 from datetime import datetime
 import pytz
 
-API_URL = "https://gym-management-system-ad16.onrender.com"
-# API_URL = "http://127.0.0.1:8000"
+# API_URL = "https://gym-management-system-ad16.onrender.com"
+API_URL = "http://127.0.0.1:8000"
 
 # Page config
 st.set_page_config(page_title="Gym Management System", page_icon="assets/favicon.jpg", layout="wide")
@@ -376,7 +376,7 @@ if not st.session_state.admin_token:
     st.markdown("<h1 style='text-align: center;'>🏋️‍♂️ Gym Check-in</h1>", unsafe_allow_html=True)
 
     # Create tabs for attendance marking and viewing
-    tab1, tab2 = st.tabs(["📝 Mark Attendance", "🎧 Workout Playlist"])
+    tab1, tab2, tab3 = st.tabs(["📝 Mark Attendance", "🎧 Workout Playlist", "🔥 Exercises"])
 
     with tab1:
         # Add verification method toggle with unique key
@@ -420,6 +420,15 @@ if not st.session_state.admin_token:
         st.info("🔴▶️[Punjabi Workout Mix](https://www.youtube.com/watch?v=h8Gjowa2fEA&list=RDCLAK5uy_mfZNbqLGOHWAFPeZiSfKN5x1d6sfOW_VI&start_radio=1)")
         st.info("🔴▶️[Intense Cardio Mix](https://www.youtube.com/watch?v=Z92JGegBYm0&list=PLu0ocO48LFms5WsI1ipaeanxqRjn2fC_5)")
         st.info("🔴▶️[Bhojpuri Workout Mix](https://www.youtube.com/watch?v=Vqn_uNb-_sU&list=PLBY8lxIP8wt951OZcPg0sLifdQs9EhD5-)")
+    
+    with tab3:
+        st.info("🏋️‍♂️[Chest Workout](https://www.muscleandstrength.com/exercises/chest)")
+        st.info("🏋️[Back Workout](https://www.muscleandstrength.com/exercises/middle-back)")
+        st.info("🏋️‍♂️[Shoulders Workout](https://www.muscleandstrength.com/exercises/Shoulders)")
+        st.info("💪🏽[Arms Workout](https://www.menshealth.com/uk/building-muscle/a754655/16-best-exercises-for-bigger-arms/)")
+        st.info("🦵[Leg Workout](https://www.menshealth.com/uk/workouts/a29208586/best-leg-exercises/)")
+        st.info("🤸‍♂️[Core Workout](https://www.menshealth.com/uk/fitness/a34037742/best-core-exercises/)")
+        st.info("🍑[Glutes Workout](https://www.womenshealthmag.com/fitness/a19983280/best-butt-exercises/)")
     # with tab2:
     #     try:
     #         # Fetch today's attendance
