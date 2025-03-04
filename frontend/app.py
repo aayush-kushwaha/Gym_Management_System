@@ -482,7 +482,6 @@ if not st.session_state.admin_token:
                 st.markdown("- **Fish (Salmon, Tuna, Tilapia)** – 20-25g per 100g")
                 st.markdown("- **Prawn** – 20g per 100g")
                 st.markdown("- **Duck (Skinless, Cooked)** – 27g per 100g")
-                st.markdown("- **Lean Beef** – 26g per 100g")
 
         # If Supplements is selected, show supplement options
         else:
