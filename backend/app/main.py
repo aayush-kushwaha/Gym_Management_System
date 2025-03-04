@@ -65,6 +65,10 @@ async def get_current_admin(token: str = Depends(oauth2_scheme), db: Session = D
         raise credentials_exception
     return admin
 
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
 @app.post("/members/", response_model=schemas.Member)
 def create_member(member: schemas.MemberCreate, db: Session = Depends(get_db), current_admin: models.Admin = Depends(get_current_admin)):
     # Check if phone number already exists
