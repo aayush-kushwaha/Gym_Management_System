@@ -497,26 +497,14 @@ if not st.session_state.admin_token:
             
             # Contact Button for Supplements
             st.markdown("### Need Supplements? Contact here 👇")
-            # Centering buttons using empty columns
-            col1, col2, col3 = st.columns([1, 2, 2])  # Centered buttons
-
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # WhatsApp Button
+                if st.button("📩 Contact on WhatsApp"):
+                    st.markdown("[Click here to chat](https://wa.me/9779817680808)", unsafe_allow_html=True)
             with col2:
-                # WhatsApp Direct Link
-                st.markdown(
-                    """<a href="https://wa.me/9779817680808" target="_blank">
-                        <button style="background-color:#25D366; color:white; padding:10px 24px; border:none; border-radius:5px; cursor:pointer; font-size:16px;">
-                            📩 Contact on WhatsApp
-                        </button>
-                    </a>""",
-                    unsafe_allow_html=True
-                )
+                if st.button("📞 Call Now"):
+                    st.markdown("[Click here to call](tel:+9779817680808)", unsafe_allow_html=True)
 
-                # Call Now Direct Link
-                st.markdown(
-                    """<a href="tel:+9779817680808">
-                        <button style="background-color:#ff5722; color:white; padding:10px 24px; border:none; border-radius:5px; cursor:pointer; font-size:16px;">
-                            📞 Call Now
-                        </button>
-                    </a>""",
-                    unsafe_allow_html=True
-                )
+
