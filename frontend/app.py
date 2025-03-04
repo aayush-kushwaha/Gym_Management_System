@@ -376,7 +376,7 @@ if not st.session_state.admin_token:
     st.markdown("<h1 style='text-align: center;'>🏋️‍♂️ Gym Check-in</h1>", unsafe_allow_html=True)
 
     # Create tabs for attendance marking and viewing
-    tab1, tab2, tab3 = st.tabs(["📝 Mark Attendance", "🎧 Workout Playlist", "🔥 Exercises"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📝 Mark Attendance", "🎧 Playlist", "🔥 Exercises", "🥦 Diet"])
 
     with tab1:
         # Add verification method toggle with unique key
@@ -415,20 +415,78 @@ if not st.session_state.admin_token:
                             st.session_state.form_submitted = True
                             st.rerun()
     
+    # Playlist Tab 
     with tab2:
-        st.info("🔴▶️[Hindi Workout Mix](https://www.youtube.com/watch?v=CBqdVosM4gU&list=PLCZ6y5l3oyobiBPbAdrYqqfBhALev1ZRT)")
-        st.info("🔴▶️[Punjabi Workout Mix](https://www.youtube.com/watch?v=h8Gjowa2fEA&list=RDCLAK5uy_mfZNbqLGOHWAFPeZiSfKN5x1d6sfOW_VI&start_radio=1)")
-        st.info("🔴▶️[Intense Cardio Mix](https://www.youtube.com/watch?v=Z92JGegBYm0&list=PLu0ocO48LFms5WsI1ipaeanxqRjn2fC_5)")
-        st.info("🔴▶️[Bhojpuri Workout Mix](https://www.youtube.com/watch?v=Vqn_uNb-_sU&list=PLBY8lxIP8wt951OZcPg0sLifdQs9EhD5-)")
-    
+        st.subheader("🎵 Workout Playlists")
+        st.markdown("🔴▶️ [**Hindi Workout Mix**](https://www.youtube.com/watch?v=CBqdVosM4gU&list=PLCZ6y5l3oyobiBPbAdrYqqfBhALev1ZRT)")
+        st.markdown("🔴▶️ [**Punjabi Workout Mix**](https://www.youtube.com/watch?v=h8Gjowa2fEA&list=RDCLAK5uy_mfZNbqLGOHWAFPeZiSfKN5x1d6sfOW_VI&start_radio=1)")
+        st.markdown("🔴▶️ [**Intense Cardio Mix**](https://www.youtube.com/watch?v=Z92JGegBYm0&list=PLu0ocO48LFms5WsI1ipaeanxqRjn2fC_5)")
+        st.markdown("🔴▶️ [**Bhojpuri Workout Mix**](https://www.youtube.com/watch?v=Vqn_uNb-_sU&list=PLBY8lxIP8wt951OZcPg0sLifdQs9EhD5-)")
+
+    # Workout Tab
     with tab3:
-        st.info("🏋️‍♂️[Chest Workout](https://www.muscleandstrength.com/exercises/chest)")
-        st.info("🏋️[Back Workout](https://www.muscleandstrength.com/exercises/middle-back)")
-        st.info("🏋️‍♂️[Shoulders Workout](https://www.muscleandstrength.com/exercises/Shoulders)")
-        st.info("💪🏽[Arms Workout](https://www.menshealth.com/uk/building-muscle/a754655/16-best-exercises-for-bigger-arms/)")
-        st.info("🦵[Leg Workout](https://www.menshealth.com/uk/workouts/a29208586/best-leg-exercises/)")
-        st.info("🤸‍♂️[Core Workout](https://www.menshealth.com/uk/fitness/a34037742/best-core-exercises/)")
-        st.info("🍑[Glutes Workout](https://www.womenshealthmag.com/fitness/a19983280/best-butt-exercises/)")
+        st.subheader("🏋️‍♂️ Workout Routines")
+        
+        # Use columns for better organization
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.markdown("🏋️‍♂️ [**Chest Workout**](https://www.muscleandstrength.com/exercises/chest)")
+            st.markdown("🏋️‍♂️ [**Back Workout**](https://www.muscleandstrength.com/exercises/middle-back)")
+            st.markdown("🏋️‍♂️ [**Shoulders Workout**](https://www.muscleandstrength.com/exercises/Shoulders)")
+
+        with col2:
+            st.markdown("💪🏽 [**Arms Workout**](https://www.menshealth.com/uk/building-muscle/a754655/16-best-exercises-for-bigger-arms/)")
+            st.markdown("🦵 [**Leg Workout**](https://www.menshealth.com/uk/workouts/a29208586/best-leg-exercises/)")
+            st.markdown("🤸‍♂️ [**Core Workout**](https://www.menshealth.com/uk/fitness/a34037742/best-core-exercises/)")
+            st.markdown("🍑 [**Glutes Workout**](https://www.womenshealthmag.com/fitness/a19983280/best-butt-exercises/)")
+    
+    # Diet Preference Selection
+    with tab4:
+        diet_preference = st.radio(
+            "Select Your Diet Preference",
+            ["Vegetarian", "Non-Vegetarian"],
+            horizontal=True,
+            key="diet_preference"
+        )
+        
+        # Protein-Rich Foods Data
+        veg_protein_sources = [
+            "**Tofu** – 10g per 100g",
+            "**Paneer (Cottage Cheese)** – 18g per 100g",
+            "**Greek Yogurt** – 10g per 100g",
+            "**Lentils (Dal)** – 18g per cup (cooked)",
+            "**Chickpeas (Chana)** – 15g per cup",
+            "**Kidney Beans (Rajma)** – 15g per cup",
+            "**Soybeans** – 28g per cup",
+            "**Quinoa** – 8g per cup (cooked)",
+            "**Nuts (Almonds, Peanuts, Walnuts)** – 6-8g per 30g",
+            "**Chia Seeds** – 5g per 2 tbsp"
+        ]
+        
+        non_veg_protein_sources = [
+            "**Chicken Breast** – 31g per 100g",
+            "**Eggs** – 6g per egg",
+            "**Fish (Salmon, Tuna, Tilapia)** – 20-25g per 100g",
+            "**Prawn** – 20g per 100g",
+            "**Duck** – 27g per 100g"
+        ]
+        
+        # Displaying the relevant list based on selection
+        if diet_preference == "Vegetarian":
+            st.subheader("🥦 Vegetarian Protein Sources")
+            for food in veg_protein_sources:
+                st.markdown(f"- {food}")
+        elif diet_preference == "Non-Vegetarian":
+            st.subheader("🍗 Non-Vegetarian Protein Sources")
+            for food in non_veg_protein_sources:
+                st.markdown(f"- {food}")
+    # else:
+    #     st.subheader("Supplements")
+    #     for food in non_veg_protein_sources:
+    #         st.markdown(f"- {food}")
+
+
     # with tab2:
     #     try:
     #         # Fetch today's attendance
