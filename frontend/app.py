@@ -442,78 +442,57 @@ if not st.session_state.admin_token:
             st.markdown("🍑 [**Glutes Workout**](https://www.womenshealthmag.com/fitness/a19983280/best-butt-exercises/)")
     
     # Diet Preference Selection
-    with tab4:
-        diet_preference = st.radio(
-            "Select Your Diet Preference",
-            ["Vegetarian", "Non-Vegetarian"],
+    with tab4: 
+        st.subheader("🥗 Select Your Diet Type")
+
+        # Main Selection - Food or Supplements
+        diet_type = st.radio(
+            "Choose Category",
+            ["Food Sources", "Supplements"],
             horizontal=True,
-            key="diet_preference"
+            key="diet_category"
         )
-        
-        # Protein-Rich Foods Data
-        veg_protein_sources = [
-            "**Tofu** – 10g per 100g",
-            "**Paneer (Cottage Cheese)** – 18g per 100g",
-            "**Greek Yogurt** – 10g per 100g",
-            "**Lentils (Dal)** – 18g per cup (cooked)",
-            "**Chickpeas (Chana)** – 15g per cup",
-            "**Kidney Beans (Rajma)** – 15g per cup",
-            "**Soybeans** – 28g per cup",
-            "**Quinoa** – 8g per cup (cooked)",
-            "**Nuts (Almonds, Peanuts, Walnuts)** – 6-8g per 30g",
-            "**Chia Seeds** – 5g per 2 tbsp"
-        ]
-        
-        non_veg_protein_sources = [
-            "**Chicken Breast** – 31g per 100g",
-            "**Eggs** – 6g per egg",
-            "**Fish (Salmon, Tuna, Tilapia)** – 20-25g per 100g",
-            "**Prawn** – 20g per 100g",
-            "**Duck** – 27g per 100g"
-        ]
-        
-        # Displaying the relevant list based on selection
-        if diet_preference == "Vegetarian":
-            st.subheader("🥦 Vegetarian Protein Sources")
-            for food in veg_protein_sources:
-                st.markdown(f"- {food}")
-        elif diet_preference == "Non-Vegetarian":
-            st.subheader("🍗 Non-Vegetarian Protein Sources")
-            for food in non_veg_protein_sources:
-                st.markdown(f"- {food}")
-    # else:
-    #     st.subheader("Supplements")
-    #     for food in non_veg_protein_sources:
-    #         st.markdown(f"- {food}")
 
+        # If Food Sources is selected, allow Veg or Non-Veg selection
+        if diet_type == "Food Sources":
+            diet_preference = st.radio(
+                "Select Your Diet Preference",
+                ["Veg", "Non-Veg"],
+                horizontal=True,
+                key="diet_preference"
+            )
 
-    # with tab2:
-    #     try:
-    #         # Fetch today's attendance
-    #         headers = {}
-    #         if st.session_state.admin_token:
-    #             headers["Authorization"] = f"Bearer {st.session_state.admin_token}"
-                
-    #         response = requests.get(f"{API_URL}/attendance/today", headers=headers)
-    #         if response.status_code == 200:
-    #             attendances = response.json()
-    #             if attendances:
-    #                 # Convert to DataFrame for better display
-    #                 df = pd.DataFrame(attendances)
-    #                 df['member_id'] = df['member_id'].apply(lambda x: f'TDFC{str(x).zfill(2)}')
-    #                 df['check_in_time'] = pd.to_datetime(df['check_in_time']).dt.strftime('%I:%M %p')
-    #                 df.columns = ['ID', 'Member ID', 'Check-in Time', 'Check-out Time']
-    #                 st.dataframe(df, use_container_width=True, hide_index=True)
-    #             else:
-    #                 st.info("No attendance records for today.")
-    #         elif response.status_code == 401:
-    #             st.error("Authentication failed. Please log out and log in again.")
-    #             # Clear token to force re-login
-    #             st.session_state.admin_token = None
-    #             st.rerun()
-    #         else:
-    #             st.error(f"Failed to fetch attendance records. Status code: {response.status_code}")
-    #     except requests.exceptions.RequestException as e:
-    #         st.error(f"Network error: {str(e)}")
-    #     except Exception as e:
-    #         st.error(f"Error fetching attendance: {str(e)}")
+            if diet_preference == "Veg":
+                st.subheader("🥦 Vegetarian Protein Sources")
+                st.markdown("- **Tofu** – 10g per 100g")
+                st.markdown("- **Paneer (Cottage Cheese)** – 18g per 100g")
+                st.markdown("- **Greek Yogurt** – 10g per 100g")
+                st.markdown("- **Lentils (Dal)** – 18g per cup (cooked)")
+                st.markdown("- **Chickpeas (Chana)** – 15g per cup")
+                st.markdown("- **Kidney Beans (Rajma)** – 15g per cup")
+                st.markdown("- **Soybeans** – 28g per cup")
+                st.markdown("- **Quinoa** – 8g per cup (cooked)")
+                st.markdown("- **Nuts (Almonds, Peanuts, Walnuts)** – 6-8g per 30g")
+                st.markdown("- **Chia Seeds** – 5g per 2 tbsp")
+
+            else:
+                st.subheader("🍗 Non-Vegetarian Protein Sources")
+                st.markdown("- **Chicken Breast** – 31g per 100g")
+                st.markdown("- **Eggs** – 6g per egg")
+                st.markdown("- **Fish (Salmon, Tuna, Tilapia)** – 20-25g per 100g")
+                st.markdown("- **Prawn** – 20g per 100g")
+                st.markdown("- **Duck (Skinless, Cooked)** – 27g per 100g")
+                st.markdown("- **Lean Beef** – 26g per 100g")
+
+        # If Supplements is selected, show supplement options
+        else:
+            st.subheader("💊 Gym Supplements & Benefits")
+            st.markdown("- **Whey Protein** – Fast-digesting protein for muscle recovery and growth.")
+            st.markdown("- **Creatine** – Improves strength, power, and muscle recovery.")
+            st.markdown("- **BCAA (Branched-Chain Amino Acids)** – Helps muscle recovery and reduces soreness.")
+            st.markdown("- **Caffeine** – Boosts energy, endurance, and mental focus during workouts.")
+            st.markdown("- **Casein Protein** – Slow-digesting protein for overnight muscle recovery.")
+            st.markdown("- **Glutamine** – Supports muscle recovery and immune function.")
+            st.markdown("- **Multivitamins** – Essential nutrients for overall health and muscle function.")
+            st.markdown("- **Fish Oil** – Rich in Omega-3 fatty acids, supports joint health, reduces inflammation, and improves heart health.")
+
