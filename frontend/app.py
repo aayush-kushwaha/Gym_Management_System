@@ -376,7 +376,7 @@ if not st.session_state.admin_token:
     st.markdown("<h1 style='text-align: center;'>🏋️‍♂️ Gym Check-in</h1>", unsafe_allow_html=True)
 
     # Create tabs for attendance marking and viewing
-    tab1, tab2, tab3, tab4 = st.tabs(["📝 Mark Attendance", "🎧 Playlist", "🔥 Exercises", "🥦 Diet"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📝 Attendance", "🎧 Playlist", "🔥 Exercises", "🥦 Diet"])
 
     with tab1:
         # Add verification method toggle with unique key
@@ -494,4 +494,29 @@ if not st.session_state.admin_token:
             st.markdown("- **Glutamine** – Supports muscle recovery and immune function.")
             st.markdown("- **Multivitamins** – Essential nutrients for overall health and muscle function.")
             st.markdown("- **Fish Oil** – Rich in Omega-3 fatty acids, supports joint health, reduces inflammation, and improves heart health.")
+            
+            # Contact Button for Supplements
+            st.markdown("### Need Supplements? Contact here 👇")
+            # Centering buttons using empty columns
+            col1, col2, col3 = st.columns([1, 2, 2])  # Centered buttons
 
+            with col2:
+                # WhatsApp Direct Link
+                st.markdown(
+                    """<a href="https://wa.me/9779817680808" target="_blank">
+                        <button style="background-color:#25D366; color:white; padding:10px 24px; border:none; border-radius:5px; cursor:pointer; font-size:16px;">
+                            📩 Contact on WhatsApp
+                        </button>
+                    </a>""",
+                    unsafe_allow_html=True
+                )
+
+                # Call Now Direct Link
+                st.markdown(
+                    """<a href="tel:+9779817680808">
+                        <button style="background-color:#ff5722; color:white; padding:10px 24px; border:none; border-radius:5px; cursor:pointer; font-size:16px;">
+                            📞 Call Now
+                        </button>
+                    </a>""",
+                    unsafe_allow_html=True
+                )
